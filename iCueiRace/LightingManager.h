@@ -31,8 +31,9 @@ public:
 
 private:
 	std::atomic<bool> THREAD_INTERRUPT;
+	std::atomic<bool> mChanged;
 	void threadMain();
 	std::thread mThread;
-	std::unordered_map<int, std::vector<CorsairLedColor*>> *mKeys;
+	std::unordered_map<int, std::vector<CorsairLedColor*> *> *mKeys;
 };
 

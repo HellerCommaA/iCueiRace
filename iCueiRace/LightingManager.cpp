@@ -11,18 +11,19 @@
 #include <unordered_map>
 
 LightingManager::LightingManager() :
-	THREAD_INTERRUPT(false)
+	THREAD_INTERRUPT(false), mChanged(false)
 {
 
 }
 
 LightingManager::~LightingManager()
 {
-	for (std::pair<int, std::vector<CorsairLedColor*>> each : (*mKeys)) {
-		std::vector<CorsairLedColor*> leds = each.second;
-		for (CorsairLedColor *led : leds) {
+	for (std::pair<int, std::vector<CorsairLedColor*>*> each : (*mKeys)) {
+		std::vector<CorsairLedColor*> *leds = each.second;
+		for (CorsairLedColor *led : *leds) {
 			if (led) delete led;
 		}
+		delete leds;
 	}
 	if (mKeys) delete mKeys;
 }
@@ -43,17 +44,17 @@ EC LightingManager::init()
 	}
 
 	// std::unordered_map<int, std::vector<CorsairLedColor>>
-	mKeys = new std::unordered_map<int, std::vector<CorsairLedColor*>>();
+	mKeys = new std::unordered_map<int, std::vector<CorsairLedColor*>*>();
 	for (auto deviceIndex = 0; deviceIndex < CorsairGetDeviceCount(); deviceIndex++) {
 		if (auto ledPositions = CorsairGetLedPositionsByDeviceIndex(deviceIndex)) {
-			std::vector<CorsairLedColor*> keys = std::vector<CorsairLedColor*>();
+			std::vector<CorsairLedColor*> *keys = new std::vector<CorsairLedColor*>();
 			for (auto i = 0; i < ledPositions->numberOfLed; i++) {
 				CorsairLedColor *s = (CorsairLedColor*) malloc(sizeof(CorsairLedColor));
 				s->ledId = ledPositions->pLedPosition[i].ledId;
 				s->r = 255;
 				s->g = 255;
 				s->b = 255;
-				keys.push_back(s);
+				keys->push_back(s);
 			}
 			mKeys->emplace(deviceIndex, keys);
 		}
@@ -68,86 +69,92 @@ EC LightingManager::init()
 void LightingManager::redFlag()
 {
 	LOGD("red flag");
-	for (std::pair<int, std::vector<CorsairLedColor*>> each : (*mKeys)) {
-		std::vector<CorsairLedColor*> leds = each.second;
-		for (CorsairLedColor *led : leds) {
+	for (std::pair<int, std::vector<CorsairLedColor*>*> each : *mKeys) {
+		std::vector<CorsairLedColor*> *leds = each.second;
+		for (CorsairLedColor *led : *leds) {
 			led->r = 255;
 			led->g = 0;
 			led->b = 0;
 		}
 	}
+	mChanged = true;
 }
 
 void LightingManager::yellowFlag()
 {
 	LOGD("Yellow flag");
-	for (std::pair<int, std::vector<CorsairLedColor*>> each : (*mKeys)) {
-		std::vector<CorsairLedColor*> leds = each.second;
-		for (CorsairLedColor* led : leds) {
+	for (std::pair<int, std::vector<CorsairLedColor*>*> each : *mKeys) {
+		std::vector<CorsairLedColor*>* leds = each.second;
+		for (CorsairLedColor* led : *leds) {
 			led->r = 255;
 			led->g = 255;
 			led->b = 0;
 		}
 	}
+	mChanged = true;
 }
 
 void LightingManager::greenFlag()
 {
 	LOGD("Green flag");
-	for (std::pair<int, std::vector<CorsairLedColor*>> each : (*mKeys)) {
-		std::vector<CorsairLedColor*> leds = each.second;
-		for (CorsairLedColor* led : leds) {
+	for (std::pair<int, std::vector<CorsairLedColor*>*> each : *mKeys) {
+		std::vector<CorsairLedColor*>* leds = each.second;
+		for (CorsairLedColor* led : *leds) {
 			led->r = 0;
 			led->g = 255;
 			led->b = 0;
 		}
 	}
+	mChanged = true;
 }
 
 void LightingManager::whiteFlag()
 {
 	LOGD("White flag");
-	for (std::pair<int, std::vector<CorsairLedColor*>> each : (*mKeys)) {
-		std::vector<CorsairLedColor*> leds = each.second;
-		for (CorsairLedColor* led : leds) {
+	for (std::pair<int, std::vector<CorsairLedColor*>*> each : *mKeys) {
+		std::vector<CorsairLedColor*>* leds = each.second;
+		for (CorsairLedColor* led : *leds) {
 			led->r = 255;
 			led->g = 255;
 			led->b = 255;
 		}
 	}
+	mChanged = true;
 }
 
 void LightingManager::blueFlag()
 {
 	LOGD("Blue flag");
-	for (std::pair<int, std::vector<CorsairLedColor*>> each : (*mKeys)) {
-		std::vector<CorsairLedColor*> leds = each.second;
-		for (CorsairLedColor* led : leds) {
+	for (std::pair<int, std::vector<CorsairLedColor*>*> each : *mKeys) {
+		std::vector<CorsairLedColor*>* leds = each.second;
+		for (CorsairLedColor* led : *leds) {
 			led->r = 0;
 			led->g = 0;
 			led->b = 255;
 		}
 	}
+	mChanged = true;
 }
 
 void LightingManager::blackFlag()
 {
 	LOGD("black flag");
-	for (std::pair<int, std::vector<CorsairLedColor*>> each : (*mKeys)) {
-		std::vector<CorsairLedColor*> leds = each.second;
-		for (CorsairLedColor* led : leds) {
-			led->r = 204;
-			led->g = 255;
-			led->b = 255;
+	for (std::pair<int, std::vector<CorsairLedColor*>*> each : *mKeys) {
+		std::vector<CorsairLedColor*>* leds = each.second;
+		for (CorsairLedColor* led : *leds) {
+			led->r = 100;
+			led->g = 100;
+			led->b = 100;
 		}
 	}
+	mChanged = true;
 }
 
 void LightingManager::DEBUG_LEDS()
 {
-	for (std::pair<int, std::vector<CorsairLedColor*>> each : (*mKeys)) {
-		std::vector<CorsairLedColor*> leds = each.second;
-		for (CorsairLedColor* led : leds) {
+	for (std::pair<int, std::vector<CorsairLedColor*>*> each : *mKeys) {
+		std::vector<CorsairLedColor*>* leds = each.second;
+		for (CorsairLedColor* led : *leds) {
 			led->r = 0;
 			led->g = 0;
 			led->b = 0;
@@ -163,19 +170,19 @@ void LightingManager::threadMain()
 	}
 
 	while (!THREAD_INTERRUPT) {
-
-		for (auto each : *mKeys) {
-			auto idx = each.first;
-			auto leds = each.second;
-			for (auto led : leds) {
-				CorsairSetLedsColorsBufferByDeviceIndex(idx, 1, led);
+		if (mChanged) {
+			for (auto each : *mKeys) {
+				auto idx = each.first;
+				auto leds = each.second;
+				for (auto led : *leds) {
+					CorsairSetLedsColorsBufferByDeviceIndex(idx, 1, led);
+				}
 			}
-		}
-		if (!CorsairSetLedsColorsFlushBuffer()) {
-			LOGE("Could not set colors to buffer");
-		}
-		
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-		//LOGD("Thread wait");
+			if (!CorsairSetLedsColorsFlushBuffer()) {
+				LOGE("Could not set colors to buffer");
+			}
+			mChanged = false;
+		}		
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 }
